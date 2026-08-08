@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>有機溶劑作業檢點表｜德林股份有限公司</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#C0392B; --red-dark:#a32f22;
+    --dark:#1a2332; --dark2:#232f45;
+    --green:#1E8449; --gray:#6b7280; --bg:#f4f5f7;
+    --border:#e2e4e9;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Noto Sans TC', sans-serif; background:var(--bg); color:#1a1a1a;
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--dark); color:#fff; padding:22px 16px; text-align:center;
+  }
+  header h1{ font-size:1.3rem; font-weight:900; letter-spacing:1px; }
+  header p{ font-size:.8rem; color:#9aa4b8; margin-top:4px; }
+
+  .wrap{ max-width:720px; margin:0 auto; padding:16px; }
+  .card{
+    background:#fff; border-radius:8px; padding:20px; margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.08); border:1px solid var(--border);
+  }
+  .card h2{
+    font-size:1rem; color:var(--dark); margin-bottom:14px; padding-bottom:8px;
+    border-bottom:2px solid var(--red); display:inline-block;
+  }
+  label{ display:block; font-size:.85rem; font-weight:500; color:#444; margin-bottom:6px; }
+  select, input[type=date], input[type=text], textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:6px;
+    font-size:.95rem; font-family:inherit; background:#fff;
+  }
+  textarea{ resize:vertical; min-height:70px; }
+  .field{ margin-bottom:16px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:560px){ .grid2{ grid-template-columns:1fr; } }
+
+  .item-row{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .item-row:last-child{ border-bottom:none; }
+  .item-num{ color:var(--red); font-family:'DM Mono',monospace; font-weight:500; margin-right:6px; }
+  .item-text{ font-size:.9rem; flex:1; line-height:1.4; }
+  .toggle{ display:flex; gap:6px; flex-shrink:0; }
+  .toggle button{
+    padding:8px 16px; border-radius:6px; border:1.5px solid var(--border); background:#fff;
+    font-size:.85rem; font-weight:700; cursor:pointer; font-family:inherit; color:#888;
+    transition:.15s;
+  }
+  .toggle button.yes.active{ background:var(--green); border-color:var(--green); color:#fff; }
+  .toggle button.no.active{ background:var(--red); border-color:var(--red); color:#fff; }
+
+  .sig-box{ border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  .sig-tabs{ display:flex; background:#f0f1f4; }
+  .sig-tabs button{
+    flex:1; padding:8px; border:none; background:none; font-size:.8rem; cursor:pointer;
+    color:#666; font-family:inherit; border-bottom:2px solid transparent;
+  }
+  .sig-tabs button.active{ color:var(--red); border-bottom-color:var(--red); font-weight:700; }
+  canvas.sig-pad{ width:100%; height:140px; display:block; touch-action:none; background:#fff; }
+  .sig-actions{ display:flex; justify-content:space-between; padding:6px 10px; background:#fafafa; }
+  .sig-actions button{
+    border:none; background:none; color:var(--gray); font-size:.78rem; cursor:pointer; font-family:inherit;
+  }
+  .sig-text-mode{ padding:14px; }
+  .sig-preview{ text-align:center; padding:8px; }
+  .sig-preview img{ max-height:110px; }
+
+  .submit-btn{
+    width:100%; padding:15px; background:var(--red); color:#fff; border:none; border-radius:8px;
+    font-size:1.05rem; font-weight:700; cursor:pointer; font-family:inherit; margin-top:8px;
+  }
+  .submit-btn:active{ background:var(--red-dark); }
+  .submit-btn:disabled{ background:#ccc; cursor:not-allowed; }
+
+  .notice{ font-size:.78rem; color:#666; line-height:1.7; }
+  .notice b{ color:var(--red); }
+
+  .msg{ font-size:.85rem; margin-top:10px; padding:10px 12px; border-radius:6px; display:none; }
+  .msg.error{ background:#fdecea; color:var(--red-dark); display:block; }
+  .msg.ok{ background:#eafaf1; color:var(--green); display:block; }
+
+  .success-screen{ display:none; text-align:center; padding:40px 20px; }
+  .success-screen .check{ font-size:3rem; color:var(--green); }
+  .success-screen h2{ margin:14px 0 6px; color:var(--dark); border:none; display:block; }
+  .success-screen p{ color:#666; font-size:.9rem; margin-bottom:4px; }
+  .success-screen .id{ font-family:'DM Mono',monospace; font-weight:700; color:var(--red); }
+  .success-screen button{
+    margin-top:20px; padding:12px 28px; background:var(--dark); color:#fff; border:none;
+    border-radius:6px; font-size:.9rem; cursor:pointer; font-family:inherit;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>有機溶劑作業檢點表</h1>
+  <p>德林股份有限公司｜線上填寫系統</p>
+</header>
+
+<div class="wrap">
+
+  <div id="formScreen">
+    <div class="card">
+      <h2>基本資料</h2>
+      <div class="field">
+        <label>單位 / 有機溶劑作業名稱 *</label>
+        <select id="unitSelect"><option value="">請選擇...</option></select>
+      </div>
+      <div class="field">
+        <label>檢查日期 *</label>
+        <input type="date" id="inspDate">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>檢查項目</h2>
+      <div id="itemsList"></div>
+    </div>
+
+    <div class="card">
+      <h2>異常時採取之措施</h2>
+      <div class="field" style="margin-bottom:0">
+        <textarea id="abnormalMeasures" placeholder="若上列檢查項目有勾選「否」，請說明發現之異常狀況及已採取之改善措施"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>檢點人員簽名</h2>
+      <div class="field">
+        <label>姓名 *</label>
+        <input type="text" id="inspectorName" placeholder="請輸入檢點人員姓名">
+      </div>
+      <label>簽名 *</label>
+      <div class="sig-box" id="sigBoxInspector"></div>
+    </div>
+
+    <div class="card">
+      <h2>主管簽名</h2>
+      <div class="field">
+        <label>姓名 *</label>
+        <input type="text" id="supervisorName" placeholder="請輸入主管姓名">
+      </div>
+      <label>簽名 *</label>
+      <div class="sig-box" id="sigBoxSupervisor"></div>
+    </div>
+
+    <div class="card notice">
+      <p><b>注意事項：</b></p>
+      <p>1. 從事有機溶劑作業應實施檢點，於發現有異常時，應立即檢修及採取必要措施。</p>
+      <p>2. 本表僅供參考，各單位於實施有機溶劑作業前應自行根據實際狀況評估各種危害之可能性制訂檢點表實施檢點。</p>
+    </div>
+
+    <div id="msgBox" class="msg"></div>
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">送出檢點表</button>
+  </div>
+
+  <div id="successScreen" class="success-screen">
+    <div class="check">✓</div>
+    <h2>已成功送出</h2>
+    <p>檢查編號：<span class="id" id="doneId"></span></p>
+    <p id="doneTime"></p>
+    <button onclick="location.reload()">再填一份</button>
+  </div>
+
+</div>
+
+<script>
+// ============== Supabase 設定（請於部署前填入你的專案資訊）==============
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-PUBLISHABLE-ANON-KEY';
+// =========================================================================
+
+async function supaFetch(path, opts = {}) {
+  const url = SUPABASE_URL + '/rest/v1/' + path;
+  const res = await fetch(url, {
+    ...opts,
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...(opts.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || ('伺服器錯誤 ' + res.status));
+  }
+  return res.json().catch(() => null);
+}
+
+let units = [];
+let items = [];
+const itemResults = {}; // item.id -> 'yes' | 'no'
+
+function todayStr() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
+async function loadUnits() {
+  units = await supaFetch('solvent_units?is_active=eq.true&order=unit_name.asc');
+  const sel = document.getElementById('unitSelect');
+  units.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.id;
+    opt.textContent = u.unit_name + '　/　' + u.operation_name;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadItems() {
+  items = await supaFetch('checklist_items?is_active=eq.true&order=seq.asc');
+  const list = document.getElementById('itemsList');
+  items.forEach(it => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML =
+      '<div class="item-text"><span class="item-num">' + it.seq + '.</span>' + it.content + '</div>' +
+      '<div class="toggle">' +
+        '<button type="button" class="yes" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'yes')\">是</button>" +
+        '<button type="button" class="no" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'no')\">否</button>" +
+      '</div>';
+    list.appendChild(row);
+  });
+}
+
+function setResult(id, val) {
+  itemResults[id] = val;
+  document.querySelectorAll('.toggle button[data-id="' + id + '"]').forEach(btn => {
+    const isThis = btn.classList.contains(val);
+    btn.classList.toggle('active', isThis);
+  });
+}
+
+// ---------------- 簽名元件（手寫 Canvas + 文字轉圖） ----------------
+function makeSignaturePad(containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML =
+    '<div class="sig-tabs">' +
+      '<button type="button" class="draw-tab active">手寫簽名</button>' +
+      '<button type="button" class="text-tab">輸入姓名產生簽名</button>' +
+    '</div>' +
+    '<div class="draw-mode">' +
+      '<canvas class="sig-pad"></canvas>' +
+      '<div class="sig-actions"><span>請用手指或滑鼠簽名</span><button type="button" class="clear-btn">清除</button></div>' +
+    '</div>' +
+    '<div class="sig-text-mode" style="display:none">' +
+      '<input type="text" class="sig-text-input" placeholder="輸入姓名，將自動產生簽名">' +
+      '<div class="sig-preview"><img class="sig-text-preview" style="display:none"></div>' +
+    '</div>';
+
+  const drawTab = container.querySelector('.draw-tab');
+  const textTab = container.querySelector('.text-tab');
+  const drawMode = container.querySelector('.draw-mode');
+  const textMode = container.querySelector('.sig-text-mode');
+  const canvas = container.querySelector('.sig-pad');
+  const ctx = canvas.getContext('2d');
+  const clearBtn = container.querySelector('.clear-btn');
+  const textInput = container.querySelector('.sig-text-input');
+  const textPreview = container.querySelector('.sig-text-preview');
+
+  function resizeCanvas() {
+    const ratio = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = canvas.clientHeight || 140;
+    canvas.width = w * ratio; canvas.height = h * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.strokeStyle = '#1a1a1a';
+  }
+  setTimeout(resizeCanvas, 50);
+
+  let drawing = false, hasDrawn = false;
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    return { x: p.clientX - r.left, y: p.clientY - r.top };
+  }
+  function start(e) { drawing = true; hasDrawn = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
+  function move(e) { if (!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); }
+  function end() { drawing = false; }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+
+  clearBtn.addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); hasDrawn = false; });
+
+  drawTab.addEventListener('click', () => {
+    drawTab.classList.add('active'); textTab.classList.remove('active');
+    drawMode.style.display = ''; textMode.style.display = 'none';
+  });
+  textTab.addEventListener('click', () => {
+    textTab.classList.add('active'); drawTab.classList.remove('active');
+    textMode.style.display = ''; drawMode.style.display = 'none';
+  });
+  textInput.addEventListener('input', () => {
+    if (textInput.value.trim()) {
+      textPreview.src = textToSigData(textInput.value.trim());
+      textPreview.style.display = '';
+    } else {
+      textPreview.style.display = 'none';
+    }
+  });
+
+  return {
+    isTextMode: () => textTab.classList.contains('active'),
+    hasContent: () => (textTab.classList.contains('active') ? !!textInput.value.trim() : hasDrawn),
+    getDataURL: () => (textTab.classList.contains('active') ? textToSigData(textInput.value.trim()) : canvas.toDataURL('image/png'))
+  };
+}
+
+function textToSigData(name) {
+  const c = document.createElement('canvas');
+  c.width = 400; c.height = 120;
+  const cx = c.getContext('2d');
+  cx.fillStyle = 'white'; cx.fillRect(0, 0, 400, 120);
+  cx.fillStyle = '#1a1a1a'; cx.font = 'bold 52px "Noto Sans TC", sans-serif';
+  cx.textAlign = 'center'; cx.textBaseline = 'middle';
+  cx.fillText(name, 200, 60);
+  return c.toDataURL('image/png');
+}
+
+let inspectorPad, supervisorPad;
+
+function showMsg(text, ok) {
+  const box = document.getElementById('msgBox');
+  box.textContent = text;
+  box.className = 'msg ' + (ok ? 'ok' : 'error');
+}
+
+async function submitForm() {
+  const unitId = document.getElementById('unitSelect').value;
+  const date = document.getElementById('inspDate').value;
+  const abnormalMeasures = document.getElementById('abnormalMeasures').value.trim();
+  const inspectorName = document.getElementById('inspectorName').value.trim();
+  const supervisorName = document.getElementById('supervisorName').value.trim();
+
+  if (!unitId) return showMsg('請選擇單位 / 有機溶劑作業名稱', false);
+  if (!date) return showMsg('請選擇檢查日期', false);
+  if (items.some(it => !itemResults[it.id])) return showMsg('請完成所有檢查項目（是／否）', false);
+  const hasAbnormal = items.some(it => itemResults[it.id] === 'no');
+  if (hasAbnormal && !abnormalMeasures) return showMsg('有檢查項目為「否」，請填寫異常時採取之措施', false);
+  if (!inspectorName) return showMsg('請輸入檢點人員姓名', false);
+  if (!inspectorPad.hasContent()) return showMsg('請完成檢點人員簽名', false);
+  if (!supervisorName) return showMsg('請輸入主管姓名', false);
+  if (!supervisorPad.hasContent()) return showMsg('請完成主管簽名', false);
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '送出中...';
+
+  try {
+    const unit = units.find(u => String(u.id) === String(unitId));
+    const inspRows = await supaFetch('inspections', {
+      method: 'POST',
+      body: JSON.stringify({
+        unit_id: unit.id,
+        unit_name: unit.unit_name,
+        operation_name: unit.operation_name,
+        inspection_date: date,
+        has_abnormal: hasAbnormal,
+        abnormal_measures: abnormalMeasures || null,
+        inspector_name: inspectorName,
+        inspector_signature: inspectorPad.getDataURL(),
+        supervisor_name: supervisorName,
+        supervisor_signature: supervisorPad.getDataURL(),
+        submitted_at: new Date().toISOString()
+      })
+    });
+    const inspection = inspRows[0];
+
+    const detailRows = items.map(it => ({
+      inspection_id: inspection.id,
+      item_id: it.id,
+      item_content: it.content,
+      seq: it.seq,
+      result: itemResults[it.id]
+    }));
+    await supaFetch('inspection_items', { method: 'POST', body: JSON.stringify(detailRows) });
+
+    document.getElementById('formScreen').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+    document.getElementById('doneId').textContent = inspection.id;
+    document.getElementById('doneTime').textContent =
+      '送出時間：' + new Date(inspection.submitted_at).toLocaleString('zh-TW');
+  } catch (e) {
+    showMsg('送出失敗：' + e.message, false);
+    btn.disabled = false; btn.textContent = '送出檢點表';
+  }
+}
+
+(async function init() {
+  document.getElementById('inspDate').value = todayStr();
+  inspectorPad = makeSignaturePad('sigBoxInspector');
+  supervisorPad = makeSignaturePad('sigBoxSupervisor');
+  try {
+    await Promise.all([loadUnits(), loadItems()]);
+  } catch (e) {
+    showMsg('資料載入失敗，請確認 Supabase 設定是否正確：' + e.message, false);
+  }
+})();
+</script>
+</body>
+</html>
