@@ -38,6 +38,10 @@
     width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:6px;
     font-size:.95rem; font-family:inherit; background:#fff;
   }
+  .fixed-date{
+    padding:10px 12px; border:1px solid var(--border); border-radius:6px;
+    font-size:.95rem; background:#f3f4f6; color:#444; font-family:'DM Mono',monospace;
+  }
   textarea{ resize:vertical; min-height:70px; }
   .field{ margin-bottom:16px; }
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -58,22 +62,6 @@
   }
   .toggle button.yes.active{ background:var(--green); border-color:var(--green); color:#fff; }
   .toggle button.no.active{ background:var(--red); border-color:var(--red); color:#fff; }
-
-  .sig-box{ border:1px solid var(--border); border-radius:6px; overflow:hidden; }
-  .sig-tabs{ display:flex; background:#f0f1f4; }
-  .sig-tabs button{
-    flex:1; padding:8px; border:none; background:none; font-size:.8rem; cursor:pointer;
-    color:#666; font-family:inherit; border-bottom:2px solid transparent;
-  }
-  .sig-tabs button.active{ color:var(--red); border-bottom-color:var(--red); font-weight:700; }
-  canvas.sig-pad{ width:100%; height:140px; display:block; touch-action:none; background:#fff; }
-  .sig-actions{ display:flex; justify-content:space-between; padding:6px 10px; background:#fafafa; }
-  .sig-actions button{
-    border:none; background:none; color:var(--gray); font-size:.78rem; cursor:pointer; font-family:inherit;
-  }
-  .sig-text-mode{ padding:14px; }
-  .sig-preview{ text-align:center; padding:8px; }
-  .sig-preview img{ max-height:110px; }
 
   .submit-btn{
     width:100%; padding:15px; background:var(--red); color:#fff; border:none; border-radius:8px;
@@ -117,8 +105,8 @@
         <select id="unitSelect"><option value="">請選擇...</option></select>
       </div>
       <div class="field">
-        <label>檢查日期 *</label>
-        <input type="date" id="inspDate">
+        <label>檢查日期</label>
+        <div id="inspDateDisplay" class="fixed-date"></div>
       </div>
     </div>
 
@@ -135,13 +123,11 @@
     </div>
 
     <div class="card">
-      <h2>檢點人員簽名</h2>
-      <div class="field">
+      <h2>檢點人員</h2>
+      <div class="field" style="margin-bottom:0">
         <label>檢點人員（員工代號 / 姓名） *</label>
         <select id="inspectorSelect"><option value="">請選擇...</option></select>
       </div>
-      <label>簽名 *</label>
-      <div class="sig-box" id="sigBoxInspector"></div>
     </div>
 
     <div class="card notice">
@@ -246,98 +232,6 @@ function setResult(id, val) {
   });
 }
 
-// ---------------- 簽名元件（手寫 Canvas + 文字轉圖） ----------------
-function makeSignaturePad(containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML =
-    '<div class="sig-tabs">' +
-      '<button type="button" class="draw-tab active">手寫簽名</button>' +
-      '<button type="button" class="text-tab">輸入姓名產生簽名</button>' +
-    '</div>' +
-    '<div class="draw-mode">' +
-      '<canvas class="sig-pad"></canvas>' +
-      '<div class="sig-actions"><span>請用手指或滑鼠簽名</span><button type="button" class="clear-btn">清除</button></div>' +
-    '</div>' +
-    '<div class="sig-text-mode" style="display:none">' +
-      '<input type="text" class="sig-text-input" placeholder="輸入姓名，將自動產生簽名">' +
-      '<div class="sig-preview"><img class="sig-text-preview" style="display:none"></div>' +
-    '</div>';
-
-  const drawTab = container.querySelector('.draw-tab');
-  const textTab = container.querySelector('.text-tab');
-  const drawMode = container.querySelector('.draw-mode');
-  const textMode = container.querySelector('.sig-text-mode');
-  const canvas = container.querySelector('.sig-pad');
-  const ctx = canvas.getContext('2d');
-  const clearBtn = container.querySelector('.clear-btn');
-  const textInput = container.querySelector('.sig-text-input');
-  const textPreview = container.querySelector('.sig-text-preview');
-
-  function resizeCanvas() {
-    const ratio = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth, h = canvas.clientHeight || 140;
-    canvas.width = w * ratio; canvas.height = h * ratio;
-    ctx.scale(ratio, ratio);
-    ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.strokeStyle = '#1a1a1a';
-  }
-  setTimeout(resizeCanvas, 50);
-
-  let drawing = false, hasDrawn = false;
-  function pos(e) {
-    const r = canvas.getBoundingClientRect();
-    const p = e.touches ? e.touches[0] : e;
-    return { x: p.clientX - r.left, y: p.clientY - r.top };
-  }
-  function start(e) { drawing = true; hasDrawn = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
-  function move(e) { if (!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); }
-  function end() { drawing = false; }
-
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  window.addEventListener('mouseup', end);
-  canvas.addEventListener('touchstart', start, { passive: false });
-  canvas.addEventListener('touchmove', move, { passive: false });
-  canvas.addEventListener('touchend', end);
-
-  clearBtn.addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); hasDrawn = false; });
-
-  drawTab.addEventListener('click', () => {
-    drawTab.classList.add('active'); textTab.classList.remove('active');
-    drawMode.style.display = ''; textMode.style.display = 'none';
-  });
-  textTab.addEventListener('click', () => {
-    textTab.classList.add('active'); drawTab.classList.remove('active');
-    textMode.style.display = ''; drawMode.style.display = 'none';
-  });
-  textInput.addEventListener('input', () => {
-    if (textInput.value.trim()) {
-      textPreview.src = textToSigData(textInput.value.trim());
-      textPreview.style.display = '';
-    } else {
-      textPreview.style.display = 'none';
-    }
-  });
-
-  return {
-    isTextMode: () => textTab.classList.contains('active'),
-    hasContent: () => (textTab.classList.contains('active') ? !!textInput.value.trim() : hasDrawn),
-    getDataURL: () => (textTab.classList.contains('active') ? textToSigData(textInput.value.trim()) : canvas.toDataURL('image/png'))
-  };
-}
-
-function textToSigData(name) {
-  const c = document.createElement('canvas');
-  c.width = 400; c.height = 120;
-  const cx = c.getContext('2d');
-  cx.fillStyle = 'white'; cx.fillRect(0, 0, 400, 120);
-  cx.fillStyle = '#1a1a1a'; cx.font = 'bold 52px "Noto Sans TC", sans-serif';
-  cx.textAlign = 'center'; cx.textBaseline = 'middle';
-  cx.fillText(name, 200, 60);
-  return c.toDataURL('image/png');
-}
-
-let inspectorPad;
-
 function showMsg(text, ok) {
   const box = document.getElementById('msgBox');
   box.textContent = text;
@@ -346,17 +240,15 @@ function showMsg(text, ok) {
 
 async function submitForm() {
   const unitId = document.getElementById('unitSelect').value;
-  const date = document.getElementById('inspDate').value;
+  const date = todayStr();
   const abnormalMeasures = document.getElementById('abnormalMeasures').value.trim();
   const inspectorId = document.getElementById('inspectorSelect').value;
 
   if (!unitId) return showMsg('請選擇單位 / 有機溶劑作業名稱', false);
-  if (!date) return showMsg('請選擇檢查日期', false);
   if (items.some(it => !itemResults[it.id])) return showMsg('請完成所有檢查項目（是／否）', false);
   const hasAbnormal = items.some(it => itemResults[it.id] === 'no');
   if (hasAbnormal && !abnormalMeasures) return showMsg('有檢查項目為「否」，請填寫異常時採取之措施', false);
   if (!inspectorId) return showMsg('請選擇檢點人員', false);
-  if (!inspectorPad.hasContent()) return showMsg('請完成檢點人員簽名', false);
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = '送出中...';
@@ -376,7 +268,6 @@ async function submitForm() {
         inspector_id: inspector.id,
         inspector_employee_code: inspector.employee_code,
         inspector_name: inspector.name,
-        inspector_signature: inspectorPad.getDataURL(),
         submitted_at: new Date().toISOString()
       })
     });
@@ -403,8 +294,7 @@ async function submitForm() {
 }
 
 (async function init() {
-  document.getElementById('inspDate').value = todayStr();
-  inspectorPad = makeSignaturePad('sigBoxInspector');
+  document.getElementById('inspDateDisplay').textContent = todayStr();
   try {
     await Promise.all([loadUnits(), loadItems(), loadInspectors()]);
   } catch (e) {
