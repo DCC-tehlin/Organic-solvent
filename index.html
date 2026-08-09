@@ -137,21 +137,11 @@
     <div class="card">
       <h2>檢點人員簽名</h2>
       <div class="field">
-        <label>姓名 *</label>
-        <input type="text" id="inspectorName" placeholder="請輸入檢點人員姓名">
+        <label>檢點人員（員工代號 / 姓名） *</label>
+        <select id="inspectorSelect"><option value="">請選擇...</option></select>
       </div>
       <label>簽名 *</label>
       <div class="sig-box" id="sigBoxInspector"></div>
-    </div>
-
-    <div class="card">
-      <h2>主管簽名</h2>
-      <div class="field">
-        <label>姓名 *</label>
-        <input type="text" id="supervisorName" placeholder="請輸入主管姓名">
-      </div>
-      <label>簽名 *</label>
-      <div class="sig-box" id="sigBoxSupervisor"></div>
     </div>
 
     <div class="card notice">
@@ -201,6 +191,7 @@ async function supaFetch(path, opts = {}) {
 
 let units = [];
 let items = [];
+let inspectors = [];
 const itemResults = {}; // item.id -> 'yes' | 'no'
 
 function todayStr() {
@@ -216,6 +207,17 @@ async function loadUnits() {
     const opt = document.createElement('option');
     opt.value = u.id;
     opt.textContent = u.unit_name + '　/　' + u.operation_name;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadInspectors() {
+  inspectors = await supaFetch('inspectors?is_active=eq.true&order=employee_code.asc');
+  const sel = document.getElementById('inspectorSelect');
+  inspectors.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.employee_code + '　/　' + p.name;
     sel.appendChild(opt);
   });
 }
@@ -334,7 +336,7 @@ function textToSigData(name) {
   return c.toDataURL('image/png');
 }
 
-let inspectorPad, supervisorPad;
+let inspectorPad;
 
 function showMsg(text, ok) {
   const box = document.getElementById('msgBox');
@@ -346,24 +348,22 @@ async function submitForm() {
   const unitId = document.getElementById('unitSelect').value;
   const date = document.getElementById('inspDate').value;
   const abnormalMeasures = document.getElementById('abnormalMeasures').value.trim();
-  const inspectorName = document.getElementById('inspectorName').value.trim();
-  const supervisorName = document.getElementById('supervisorName').value.trim();
+  const inspectorId = document.getElementById('inspectorSelect').value;
 
   if (!unitId) return showMsg('請選擇單位 / 有機溶劑作業名稱', false);
   if (!date) return showMsg('請選擇檢查日期', false);
   if (items.some(it => !itemResults[it.id])) return showMsg('請完成所有檢查項目（是／否）', false);
   const hasAbnormal = items.some(it => itemResults[it.id] === 'no');
   if (hasAbnormal && !abnormalMeasures) return showMsg('有檢查項目為「否」，請填寫異常時採取之措施', false);
-  if (!inspectorName) return showMsg('請輸入檢點人員姓名', false);
+  if (!inspectorId) return showMsg('請選擇檢點人員', false);
   if (!inspectorPad.hasContent()) return showMsg('請完成檢點人員簽名', false);
-  if (!supervisorName) return showMsg('請輸入主管姓名', false);
-  if (!supervisorPad.hasContent()) return showMsg('請完成主管簽名', false);
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = '送出中...';
 
   try {
     const unit = units.find(u => String(u.id) === String(unitId));
+    const inspector = inspectors.find(p => String(p.id) === String(inspectorId));
     const inspRows = await supaFetch('inspections', {
       method: 'POST',
       body: JSON.stringify({
@@ -373,10 +373,10 @@ async function submitForm() {
         inspection_date: date,
         has_abnormal: hasAbnormal,
         abnormal_measures: abnormalMeasures || null,
-        inspector_name: inspectorName,
+        inspector_id: inspector.id,
+        inspector_employee_code: inspector.employee_code,
+        inspector_name: inspector.name,
         inspector_signature: inspectorPad.getDataURL(),
-        supervisor_name: supervisorName,
-        supervisor_signature: supervisorPad.getDataURL(),
         submitted_at: new Date().toISOString()
       })
     });
@@ -405,9 +405,8 @@ async function submitForm() {
 (async function init() {
   document.getElementById('inspDate').value = todayStr();
   inspectorPad = makeSignaturePad('sigBoxInspector');
-  supervisorPad = makeSignaturePad('sigBoxSupervisor');
   try {
-    await Promise.all([loadUnits(), loadItems()]);
+    await Promise.all([loadUnits(), loadItems(), loadInspectors()]);
   } catch (e) {
     showMsg('資料載入失敗，請確認 Supabase 設定是否正確：' + e.message, false);
   }
