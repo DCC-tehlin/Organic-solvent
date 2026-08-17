@@ -193,14 +193,22 @@ function todayStr() {
 }
 
 async function loadSites() {
-  sites = await supaFetch('dust_sites?is_active=eq.true&order=site_name.asc');
+  sites = await supaFetch('work_units?is_active=eq.true&order=unit_name.asc');
   const sel = document.getElementById('siteSelect');
   sites.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
-    opt.textContent = s.site_name;
+    opt.textContent = s.unit_name;
     sel.appendChild(opt);
   });
+}
+
+async function hasSubmittedToday(inspectorEmployeeCode, date) {
+  const rows = await supaFetch(
+    'dust_inspections?inspector_employee_code=eq.' + encodeURIComponent(inspectorEmployeeCode) +
+    '&inspection_date=eq.' + date + '&select=id&limit=1'
+  );
+  return Array.isArray(rows) && rows.length > 0;
 }
 
 async function loadInspectors() {
@@ -271,11 +279,18 @@ async function submitForm() {
   try {
     const site = sites.find(s => String(s.id) === String(siteId));
     const inspector = inspectors.find(p => String(p.id) === String(inspectorId));
+
+    if (await hasSubmittedToday(inspector.employee_code, date)) {
+      showMsg('您今日已填寫過一份粉塵作業檢點表，每人每天限填一張。如需修改請聯絡管理單位。', false);
+      btn.disabled = false; btn.textContent = '送出檢點表';
+      return;
+    }
+
     const inspRows = await supaFetch('dust_inspections', {
       method: 'POST',
       body: JSON.stringify({
         site_id: site.id,
-        site_name: site.site_name,
+        site_name: site.unit_name,
         inspection_date: date,
         has_abnormal: hasAbnormal,
         abnormal_measures: abnormalMeasures || null,
@@ -303,7 +318,10 @@ async function submitForm() {
     document.getElementById('doneTime').textContent =
       '送出時間：' + new Date(inspection.submitted_at).toLocaleString('zh-TW');
   } catch (e) {
-    showMsg('送出失敗：' + e.message, false);
+    const dupMsg = /duplicate key|already exists|23505/i.test(e.message)
+      ? '您今日已填寫過一份粉塵作業檢點表，每人每天限填一張。如需修改請聯絡管理單位。'
+      : '送出失敗：' + e.message;
+    showMsg(dupMsg, false);
     btn.disabled = false; btn.textContent = '送出檢點表';
   }
 }

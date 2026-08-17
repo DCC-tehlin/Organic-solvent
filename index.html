@@ -101,8 +101,12 @@
     <div class="card">
       <h2>基本資料</h2>
       <div class="field">
-        <label>單位 / 有機溶劑作業名稱 *</label>
+        <label>單位 *</label>
         <select id="unitSelect"><option value="">請選擇...</option></select>
+      </div>
+      <div class="field">
+        <label>有機溶劑作業名稱 *</label>
+        <input type="text" id="operationNameInput" placeholder="請填寫本次作業名稱，例如：噴漆作業">
       </div>
       <div class="field">
         <label>檢查日期</label>
@@ -187,14 +191,22 @@ function todayStr() {
 }
 
 async function loadUnits() {
-  units = await supaFetch('solvent_units?is_active=eq.true&order=unit_name.asc');
+  units = await supaFetch('work_units?is_active=eq.true&order=unit_name.asc');
   const sel = document.getElementById('unitSelect');
   units.forEach(u => {
     const opt = document.createElement('option');
     opt.value = u.id;
-    opt.textContent = u.unit_name + '　/　' + u.operation_name;
+    opt.textContent = u.unit_name;
     sel.appendChild(opt);
   });
+}
+
+async function hasSubmittedToday(inspectorEmployeeCode, date) {
+  const rows = await supaFetch(
+    'inspections?inspector_employee_code=eq.' + encodeURIComponent(inspectorEmployeeCode) +
+    '&inspection_date=eq.' + date + '&select=id&limit=1'
+  );
+  return Array.isArray(rows) && rows.length > 0;
 }
 
 async function loadInspectors() {
@@ -240,11 +252,13 @@ function showMsg(text, ok) {
 
 async function submitForm() {
   const unitId = document.getElementById('unitSelect').value;
+  const operationName = document.getElementById('operationNameInput').value.trim();
   const date = todayStr();
   const abnormalMeasures = document.getElementById('abnormalMeasures').value.trim();
   const inspectorId = document.getElementById('inspectorSelect').value;
 
-  if (!unitId) return showMsg('請選擇單位 / 有機溶劑作業名稱', false);
+  if (!unitId) return showMsg('請選擇單位', false);
+  if (!operationName) return showMsg('請填寫有機溶劑作業名稱', false);
   if (items.some(it => !itemResults[it.id])) return showMsg('請完成所有檢查項目（是／否）', false);
   const hasAbnormal = items.some(it => itemResults[it.id] === 'no');
   if (hasAbnormal && !abnormalMeasures) return showMsg('有檢查項目為「否」，請填寫異常時採取之措施', false);
@@ -256,12 +270,19 @@ async function submitForm() {
   try {
     const unit = units.find(u => String(u.id) === String(unitId));
     const inspector = inspectors.find(p => String(p.id) === String(inspectorId));
+
+    if (await hasSubmittedToday(inspector.employee_code, date)) {
+      showMsg('您今日已填寫過一份有機溶劑作業檢點表，每人每天限填一張。如需修改請聯絡管理單位。', false);
+      btn.disabled = false; btn.textContent = '送出檢點表';
+      return;
+    }
+
     const inspRows = await supaFetch('inspections', {
       method: 'POST',
       body: JSON.stringify({
         unit_id: unit.id,
         unit_name: unit.unit_name,
-        operation_name: unit.operation_name,
+        operation_name: operationName,
         inspection_date: date,
         has_abnormal: hasAbnormal,
         abnormal_measures: abnormalMeasures || null,
@@ -288,7 +309,10 @@ async function submitForm() {
     document.getElementById('doneTime').textContent =
       '送出時間：' + new Date(inspection.submitted_at).toLocaleString('zh-TW');
   } catch (e) {
-    showMsg('送出失敗：' + e.message, false);
+    const dupMsg = /duplicate key|already exists|23505/i.test(e.message)
+      ? '您今日已填寫過一份有機溶劑作業檢點表，每人每天限填一張。如需修改請聯絡管理單位。'
+      : '送出失敗：' + e.message;
+    showMsg(dupMsg, false);
     btn.disabled = false; btn.textContent = '送出檢點表';
   }
 }

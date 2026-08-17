@@ -142,15 +142,14 @@
 
     <h2 style="margin-top:14px">有機溶劑作業</h2>
     <div class="navitem" data-page="records" onclick="gotoPage('records')">檢查記錄</div>
-    <div class="navitem" data-page="units" onclick="gotoPage('units')">單位管理</div>
     <div class="navitem" data-page="items" onclick="gotoPage('items')">檢查項目管理</div>
 
     <h2 style="margin-top:14px">粉塵作業</h2>
     <div class="navitem" data-page="dustRecords" onclick="gotoPage('dustRecords')">檢查記錄</div>
-    <div class="navitem" data-page="sites" onclick="gotoPage('sites')">場域管理</div>
     <div class="navitem" data-page="dustItems" onclick="gotoPage('dustItems')">檢查項目管理</div>
 
     <h2 style="margin-top:14px">共用管理</h2>
+    <div class="navitem" data-page="units" onclick="gotoPage('units')">單位/場域管理</div>
     <div class="navitem" data-page="inspectors" onclick="gotoPage('inspectors')">檢點人員管理</div>
     <div class="navitem" data-page="admins" onclick="gotoPage('admins')">管理員帳號</div>
     <div class="navitem" data-page="import" onclick="gotoPage('import')">批次匯入</div>
@@ -213,15 +212,16 @@
       </div>
     </div>
 
-    <!-- 單位管理 -->
+    <!-- 單位/場域管理（有機溶劑與粉塵共用） -->
     <div class="page" id="page-units">
-      <h1>單位管理</h1>
+      <h1>單位/場域管理</h1>
+      <p style="font-size:.85rem;color:#888;margin-bottom:14px">此清單由有機溶劑作業檢點表的「單位」與粉塵作業檢點表的「場域」共用。</p>
       <div class="card">
-        <button class="btn primary" onclick="openUnitModal()">+ 新增單位</button>
+        <button class="btn primary" onclick="openUnitModal()">+ 新增單位/場域</button>
       </div>
       <div class="card">
         <table id="unitsTable"><thead><tr>
-          <th>單位</th><th>有機溶劑作業名稱</th><th>狀態</th><th>操作</th>
+          <th>單位/場域名稱</th><th>狀態</th><th>操作</th>
         </tr></thead><tbody></tbody></table>
       </div>
     </div>
@@ -269,19 +269,6 @@
       <div class="card">
         <table id="dustRecordsTable"><thead><tr>
           <th>編號</th><th>場域</th><th>日期</th><th>員工代號</th><th>檢點人員</th><th>結果</th><th>送出時間</th><th>操作</th>
-        </tr></thead><tbody></tbody></table>
-      </div>
-    </div>
-
-    <!-- 粉塵-場域管理 -->
-    <div class="page" id="page-sites">
-      <h1>粉塵作業｜場域管理</h1>
-      <div class="card">
-        <button class="btn primary" onclick="openSiteModal()">+ 新增場域</button>
-      </div>
-      <div class="card">
-        <table id="sitesTable"><thead><tr>
-          <th>場域</th><th>狀態</th><th>操作</th>
         </tr></thead><tbody></tbody></table>
       </div>
     </div>
@@ -345,20 +332,6 @@
 </div>
 </div>
 
-<!-- ============ Modal：場域 ============ -->
-<div class="modal-overlay" id="modalSite">
-  <div class="modal">
-    <span class="close-x" onclick="closeModal('modalSite')">✕</span>
-    <h3 id="siteModalTitle">新增場域</h3>
-    <input type="hidden" id="siteId">
-    <div class="form-row"><label>場域名稱 *</label><input type="text" id="siteName"></div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal('modalSite')">取消</button>
-      <button class="btn primary" onclick="saveSite()">儲存</button>
-    </div>
-  </div>
-</div>
-
 <!-- ============ Modal：粉塵檢查項目 ============ -->
 <div class="modal-overlay" id="modalDustItem">
   <div class="modal">
@@ -376,14 +349,13 @@
   </div>
 </div>
 
-<!-- ============ Modal：單位 ============ -->
+<!-- ============ Modal：單位/場域 ============ -->
 <div class="modal-overlay" id="modalUnit">
   <div class="modal">
     <span class="close-x" onclick="closeModal('modalUnit')">✕</span>
-    <h3 id="unitModalTitle">新增單位</h3>
+    <h3 id="unitModalTitle">新增單位/場域</h3>
     <input type="hidden" id="unitId">
-    <div class="form-row"><label>單位名稱 *</label><input type="text" id="unitName"></div>
-    <div class="form-row"><label>有機溶劑作業名稱 *</label><input type="text" id="unitOperation"></div>
+    <div class="form-row"><label>單位/場域名稱 *</label><input type="text" id="unitName"></div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('modalUnit')">取消</button>
       <button class="btn primary" onclick="saveUnit()">儲存</button>
@@ -502,7 +474,6 @@ let currentDustDetailId = null;
 let allUnits = [];
 let allItems = [];
 let allInspectors = [];
-let allSites = [];
 let allDustItems = [];
 
 // ---------------- 登入 ----------------
@@ -555,7 +526,6 @@ function gotoPage(name) {
   if (name === 'items') loadItemsTable();
   if (name === 'admins') loadAdminsTable();
   if (name === 'dustRecords') loadDustRecords();
-  if (name === 'sites') loadSitesTable();
   if (name === 'dustItems') loadDustItemsTable();
 }
 
@@ -571,7 +541,7 @@ function fmtDT(s) { return s ? new Date(s).toLocaleString('zh-TW') : ''; }
 
 // ---------------- 共用資料 ----------------
 async function loadMasterData() {
-  allUnits = await dbFetch('solvent_units?order=unit_name.asc');
+  allUnits = await dbFetch('work_units?order=unit_name.asc');
   allItems = await dbFetch('checklist_items?order=seq.asc');
   allInspectors = await dbFetch('inspectors?order=employee_code.asc');
 
@@ -580,7 +550,7 @@ async function loadMasterData() {
   allUnits.forEach(u => {
     const opt = document.createElement('option');
     opt.value = u.id;
-    opt.textContent = u.unit_name + ' / ' + u.operation_name;
+    opt.textContent = u.unit_name;
     sel.appendChild(opt);
   });
 
@@ -593,15 +563,14 @@ async function loadMasterData() {
     selI.appendChild(opt);
   });
 
-  allSites = await dbFetch('dust_sites?order=site_name.asc');
   allDustItems = await dbFetch('dust_checklist_items?order=category_seq.asc,seq.asc');
 
   const selSite = document.getElementById('dustFilterSite');
   selSite.innerHTML = '<option value="">全部</option>';
-  allSites.forEach(s => {
+  allUnits.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
-    opt.textContent = s.site_name;
+    opt.textContent = s.unit_name;
     selSite.appendChild(opt);
   });
 
@@ -640,7 +609,7 @@ async function loadDashboard() {
   const dustRows = await dbFetch('dust_inspections?inspection_date=gte.' + monthStart + '&order=submitted_at.desc');
   document.getElementById('dustStatMonth').textContent = dustRows.length;
   document.getElementById('dustStatAbnormal').textContent = dustRows.filter(r => r.has_abnormal).length;
-  document.getElementById('dustStatSites').textContent = allSites.filter(s => s.is_active).length;
+  document.getElementById('dustStatSites').textContent = allUnits.filter(s => s.is_active).length;
 
   const dustRecent = dustRows.slice(0, 10);
   const dustTbody = document.querySelector('#dustRecentTable tbody');
@@ -830,51 +799,6 @@ async function exportDustCSV() {
   a.click();
 }
 
-// ---------------- 粉塵-場域管理 ----------------
-async function loadSitesTable() {
-  const rows = await dbFetch('dust_sites?order=site_name.asc');
-  allSites = rows;
-  const tbody = document.querySelector('#sitesTable tbody');
-  tbody.innerHTML = '';
-  rows.forEach(s => {
-    const tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td>' + s.site_name + '</td>' +
-      '<td>' + (s.is_active ? '<span class="badge ok">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
-      '<td><button class="btn small" onclick=\'editSite(' + JSON.stringify(s).replace(/'/g, "&#39;") + ')\'>編輯</button> ' +
-      '<button class="btn small" onclick="toggleSite(' + s.id + ',' + !s.is_active + ')">' + (s.is_active ? '停用' : '啟用') + '</button></td>';
-    tbody.appendChild(tr);
-  });
-}
-function openSiteModal() {
-  document.getElementById('siteModalTitle').textContent = '新增場域';
-  document.getElementById('siteId').value = '';
-  document.getElementById('siteName').value = '';
-  document.getElementById('modalSite').classList.add('open');
-}
-function editSite(s) {
-  document.getElementById('siteModalTitle').textContent = '編輯場域';
-  document.getElementById('siteId').value = s.id;
-  document.getElementById('siteName').value = s.site_name;
-  document.getElementById('modalSite').classList.add('open');
-}
-async function saveSite() {
-  const id = document.getElementById('siteId').value;
-  const site_name = document.getElementById('siteName').value.trim();
-  if (!site_name) { alert('請填寫場域名稱'); return; }
-  if (id) {
-    await dbFetch('dust_sites?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ site_name }) });
-  } else {
-    await dbFetch('dust_sites', { method: 'POST', body: JSON.stringify({ site_name }) });
-  }
-  closeModal('modalSite');
-  loadSitesTable();
-}
-async function toggleSite(id, newVal) {
-  await dbFetch('dust_sites?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ is_active: newVal }) });
-  loadSitesTable();
-}
-
 // ---------------- 粉塵-檢查項目管理 ----------------
 async function loadDustItemsTable() {
   const rows = await dbFetch('dust_checklist_items?order=category_seq.asc,seq.asc');
@@ -929,16 +853,16 @@ async function toggleDustItem(id, newVal) {
   loadDustItemsTable();
 }
 
-// ---------------- 單位管理 ----------------
+// ---------------- 單位/場域管理（有機溶劑與粉塵共用） ----------------
 async function loadUnitsTable() {
-  const rows = await dbFetch('solvent_units?order=unit_name.asc');
+  const rows = await dbFetch('work_units?order=unit_name.asc');
   allUnits = rows;
   const tbody = document.querySelector('#unitsTable tbody');
   tbody.innerHTML = '';
   rows.forEach(u => {
     const tr = document.createElement('tr');
     tr.innerHTML =
-      '<td>' + u.unit_name + '</td><td>' + u.operation_name + '</td>' +
+      '<td>' + u.unit_name + '</td>' +
       '<td>' + (u.is_active ? '<span class="badge ok">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
       '<td><button class="btn small" onclick=\'editUnit(' + JSON.stringify(u).replace(/'/g, "&#39;") + ')\'>編輯</button> ' +
       '<button class="btn small" onclick="toggleUnit(' + u.id + ',' + !u.is_active + ')">' + (u.is_active ? '停用' : '啟用') + '</button></td>';
@@ -946,34 +870,31 @@ async function loadUnitsTable() {
   });
 }
 function openUnitModal() {
-  document.getElementById('unitModalTitle').textContent = '新增單位';
+  document.getElementById('unitModalTitle').textContent = '新增單位/場域';
   document.getElementById('unitId').value = '';
   document.getElementById('unitName').value = '';
-  document.getElementById('unitOperation').value = '';
   document.getElementById('modalUnit').classList.add('open');
 }
 function editUnit(u) {
-  document.getElementById('unitModalTitle').textContent = '編輯單位';
+  document.getElementById('unitModalTitle').textContent = '編輯單位/場域';
   document.getElementById('unitId').value = u.id;
   document.getElementById('unitName').value = u.unit_name;
-  document.getElementById('unitOperation').value = u.operation_name;
   document.getElementById('modalUnit').classList.add('open');
 }
 async function saveUnit() {
   const id = document.getElementById('unitId').value;
   const unit_name = document.getElementById('unitName').value.trim();
-  const operation_name = document.getElementById('unitOperation').value.trim();
-  if (!unit_name || !operation_name) { alert('請填寫完整資訊'); return; }
+  if (!unit_name) { alert('請填寫單位/場域名稱'); return; }
   if (id) {
-    await dbFetch('solvent_units?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ unit_name, operation_name }) });
+    await dbFetch('work_units?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ unit_name }) });
   } else {
-    await dbFetch('solvent_units', { method: 'POST', body: JSON.stringify({ unit_name, operation_name }) });
+    await dbFetch('work_units', { method: 'POST', body: JSON.stringify({ unit_name }) });
   }
   closeModal('modalUnit');
   loadUnitsTable();
 }
 async function toggleUnit(id, newVal) {
-  await dbFetch('solvent_units?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ is_active: newVal }) });
+  await dbFetch('work_units?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ is_active: newVal }) });
   loadUnitsTable();
 }
 
@@ -1237,7 +1158,7 @@ async function confirmImport() {
       const inspRows = await dbFetch('inspections', {
         method: 'POST',
         body: JSON.stringify({
-          unit_id: unit.id, unit_name: unit.unit_name, operation_name: g.operation || unit.operation_name,
+          unit_id: unit.id, unit_name: unit.unit_name, operation_name: g.operation || '',
           inspection_date: g.date, has_abnormal: hasAbnormal, abnormal_measures: g.measures || null,
           inspector_id: inspector.id, inspector_employee_code: inspector.employee_code, inspector_name: g.inspector || inspector.name,
           submitted_at: g.submitted || new Date().toISOString()
@@ -1258,7 +1179,7 @@ async function confirmImport() {
 function renderDustImportPreview() {
   let html = '<table><thead><tr><th>場域</th><th>日期</th><th>員工代號</th><th>檢點人員</th><th>項目數</th></tr></thead><tbody>';
   importGroups.forEach(g => {
-    const foundSite = allSites.find(s => s.site_name === g.site);
+    const foundSite = allUnits.find(s => s.unit_name === g.site);
     const foundInspector = allInspectors.find(p => p.employee_code === g.employeeCode);
     const ok = foundSite && foundInspector;
     html += '<tr' + (ok ? '' : ' style="color:#C0392B"') + '>' +
@@ -1272,7 +1193,7 @@ async function confirmDustImport() {
   const msgBox = document.getElementById('importMsg');
   let ok = 0, fail = 0;
   for (const g of importGroups) {
-    const site = allSites.find(s => s.site_name === g.site);
+    const site = allUnits.find(s => s.unit_name === g.site);
     const inspector = allInspectors.find(p => p.employee_code === g.employeeCode);
     if (!site || !inspector) { fail++; continue; }
     try {
@@ -1280,7 +1201,7 @@ async function confirmDustImport() {
       const inspRows = await dbFetch('dust_inspections', {
         method: 'POST',
         body: JSON.stringify({
-          site_id: site.id, site_name: site.site_name,
+          site_id: site.id, site_name: site.unit_name,
           inspection_date: g.date, has_abnormal: hasAbnormal, abnormal_measures: g.measures || null,
           inspector_id: inspector.id, inspector_employee_code: inspector.employee_code, inspector_name: g.inspector || inspector.name,
           submitted_at: g.submitted || new Date().toISOString()
