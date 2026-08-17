@@ -142,6 +142,7 @@
 
     <h2 style="margin-top:14px">有機溶劑作業</h2>
     <div class="navitem" data-page="records" onclick="gotoPage('records')">檢查記錄</div>
+    <div class="navitem" data-page="operations" onclick="gotoPage('operations')">作業名稱管理</div>
     <div class="navitem" data-page="items" onclick="gotoPage('items')">檢查項目管理</div>
 
     <h2 style="margin-top:14px">粉塵作業</h2>
@@ -222,6 +223,19 @@
       <div class="card">
         <table id="unitsTable"><thead><tr>
           <th>單位/場域名稱</th><th>狀態</th><th>操作</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- 有機溶劑-作業名稱管理 -->
+    <div class="page" id="page-operations">
+      <h1>有機溶劑作業｜作業名稱管理</h1>
+      <div class="card">
+        <button class="btn primary" onclick="openOperationModal()">+ 新增作業名稱</button>
+      </div>
+      <div class="card">
+        <table id="operationsTable"><thead><tr>
+          <th>有機溶劑作業名稱</th><th>狀態</th><th>操作</th>
         </tr></thead><tbody></tbody></table>
       </div>
     </div>
@@ -318,7 +332,7 @@
         </p>
         <p id="importFormatHintDust" style="display:none; font-size:.85rem; color:#666; line-height:1.7; margin-bottom:14px;">
           CSV 欄位需依序為：<br>
-          <code>場域,日期,員工代號,檢點人員,分類,品項順序,品項內容,結果(良好/不良/無此項目),異常說明,送出時間</code><br>
+          <code>場域,日期,員工代號,檢點人員,分類,品項順序,品項內容,結果(是/否/無此項目),異常說明,送出時間</code><br>
           每張檢點表對應多列（每個檢查項目一列），系統會依「場域+日期+員工代號」自動分組為一筆記錄。
         </p>
         <div class="import-box">
@@ -359,6 +373,20 @@
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('modalUnit')">取消</button>
       <button class="btn primary" onclick="saveUnit()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal：作業名稱 ============ -->
+<div class="modal-overlay" id="modalOperation">
+  <div class="modal">
+    <span class="close-x" onclick="closeModal('modalOperation')">✕</span>
+    <h3 id="operationModalTitle">新增作業名稱</h3>
+    <input type="hidden" id="operationId">
+    <div class="form-row"><label>有機溶劑作業名稱 *</label><input type="text" id="operationName"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalOperation')">取消</button>
+      <button class="btn primary" onclick="saveOperation()">儲存</button>
     </div>
   </div>
 </div>
@@ -475,6 +503,7 @@ let allUnits = [];
 let allItems = [];
 let allInspectors = [];
 let allDustItems = [];
+let allOperations = [];
 
 // ---------------- 登入 ----------------
 async function doLogin() {
@@ -525,6 +554,7 @@ function gotoPage(name) {
   if (name === 'inspectors') loadInspectorsTable();
   if (name === 'items') loadItemsTable();
   if (name === 'admins') loadAdminsTable();
+  if (name === 'operations') loadOperationsTable();
   if (name === 'dustRecords') loadDustRecords();
   if (name === 'dustItems') loadDustItemsTable();
 }
@@ -713,8 +743,8 @@ function todayStr() {
 // ---------------- 粉塵-檢查記錄 ----------------
 let lastDustRecordsResult = [];
 function dustResultBadge(result) {
-  if (result === 'good') return '<span class="badge ok">良好</span>';
-  if (result === 'bad') return '<span class="badge bad">不良</span>';
+  if (result === 'good') return '<span class="badge ok">是</span>';
+  if (result === 'bad') return '<span class="badge bad">否</span>';
   return '<span class="badge off">無此項目</span>';
 }
 async function loadDustRecords() {
@@ -785,7 +815,7 @@ async function exportDustCSV() {
   for (const insp of lastDustRecordsResult) {
     const details = await dbFetch('dust_inspection_items?inspection_id=eq.' + insp.id + '&order=seq.asc');
     details.forEach(d => {
-      const resultText = d.result === 'good' ? '良好' : (d.result === 'bad' ? '不良' : '無此項目');
+      const resultText = d.result === 'good' ? '是' : (d.result === 'bad' ? '否' : '無此項目');
       rows.push([
         insp.site_name, insp.inspection_date, insp.inspector_employee_code, insp.inspector_name,
         d.category, d.seq, d.item_content, resultText, insp.abnormal_measures || '', insp.submitted_at
@@ -896,6 +926,55 @@ async function saveUnit() {
 async function toggleUnit(id, newVal) {
   await dbFetch('work_units?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ is_active: newVal }) });
   loadUnitsTable();
+}
+
+// ---------------- 有機溶劑-作業名稱管理 ----------------
+async function loadOperationsTable() {
+  const rows = await dbFetch('solvent_operations?order=operation_name.asc');
+  allOperations = rows;
+  const tbody = document.querySelector('#operationsTable tbody');
+  tbody.innerHTML = '';
+  rows.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + o.operation_name + '</td>' +
+      '<td>' + (o.is_active ? '<span class="badge ok">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
+      '<td><button class="btn small" onclick=\'editOperation(' + JSON.stringify(o).replace(/'/g, "&#39;") + ')\'>編輯</button> ' +
+      '<button class="btn small" onclick="toggleOperation(' + o.id + ',' + !o.is_active + ')">' + (o.is_active ? '停用' : '啟用') + '</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+function openOperationModal() {
+  document.getElementById('operationModalTitle').textContent = '新增作業名稱';
+  document.getElementById('operationId').value = '';
+  document.getElementById('operationName').value = '';
+  document.getElementById('modalOperation').classList.add('open');
+}
+function editOperation(o) {
+  document.getElementById('operationModalTitle').textContent = '編輯作業名稱';
+  document.getElementById('operationId').value = o.id;
+  document.getElementById('operationName').value = o.operation_name;
+  document.getElementById('modalOperation').classList.add('open');
+}
+async function saveOperation() {
+  const id = document.getElementById('operationId').value;
+  const operation_name = document.getElementById('operationName').value.trim();
+  if (!operation_name) { alert('請填寫作業名稱'); return; }
+  try {
+    if (id) {
+      await dbFetch('solvent_operations?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ operation_name }) });
+    } else {
+      await dbFetch('solvent_operations', { method: 'POST', body: JSON.stringify({ operation_name }) });
+    }
+    closeModal('modalOperation');
+    loadOperationsTable();
+  } catch (e) {
+    alert('儲存失敗：' + e.message + '（作業名稱可能已存在）');
+  }
+}
+async function toggleOperation(id, newVal) {
+  await dbFetch('solvent_operations?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ is_active: newVal }) });
+  loadOperationsTable();
 }
 
 // ---------------- 檢點人員管理 ----------------
@@ -1109,7 +1188,7 @@ function handleImportFile(e) {
           const [site, date, employeeCode, inspector, category, seq, content, result, measures, submitted] = r;
           const key = site + '|' + date + '|' + employeeCode;
           if (!groups[key]) groups[key] = { site, date, employeeCode, inspector, measures, submitted, items: [] };
-          const resultVal = result === '良好' ? 'good' : (result === '不良' ? 'bad' : 'na');
+          const resultVal = (result === '是' || result === '良好') ? 'good' : ((result === '否' || result === '不良') ? 'bad' : 'na');
           groups[key].items.push({ category, seq: Number(seq), content, result: resultVal });
         });
         importGroups = Object.values(groups);

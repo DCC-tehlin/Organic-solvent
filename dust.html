@@ -117,14 +117,14 @@
 
     <div class="card">
       <h2>檢查項目</h2>
-      <p style="font-size:.78rem; color:#888; margin-bottom:4px;">良好請點「良好」，異常請點「不良」，該場域無此項目請點「無此項目」</p>
+      <p style="font-size:.78rem; color:#888; margin-bottom:4px;">正常請點「是」，異常請點「否」，該場域無此項目請點「無此項目」</p>
       <div id="itemsList"></div>
     </div>
 
     <div class="card">
       <h2>異常說明</h2>
       <div class="field" style="margin-bottom:0">
-        <textarea id="abnormalMeasures" placeholder="若上列檢查項目有勾選「不良」，請說明發現之異常狀況及已採取之改善措施"></textarea>
+        <textarea id="abnormalMeasures" placeholder="若上列檢查項目有勾選「否」，請說明發現之異常狀況及已採取之改善措施"></textarea>
       </div>
     </div>
 
@@ -138,7 +138,7 @@
 
     <div class="card notice">
       <p><b>備註：</b></p>
-      <p>1. 檢查結果：良好者請點選「良好」，不良請點選「不良」，該場域無此項目請點選「無此項目」。</p>
+      <p>1. 檢查結果：正常請點選「是」，異常請點選「否」，該場域無此項目請點選「無此項目」。</p>
       <p>2. 本表確實填報及保存，如影響作業安全、生產效率、品質請主動呈報主管以維持人員安全。</p>
     </div>
 
@@ -239,8 +239,8 @@ async function loadItems() {
     row.innerHTML =
       '<div class="item-text"><span class="item-num">' + it.seq + '.</span>' + it.content + '</div>' +
       '<div class="toggle">' +
-        '<button type="button" class="good" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'good')\">良好</button>" +
-        '<button type="button" class="bad" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'bad')\">不良</button>" +
+        '<button type="button" class="good" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'good')\">是</button>" +
+        '<button type="button" class="bad" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'bad')\">否</button>" +
         '<button type="button" class="na" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'na')\">無此項目</button>" +
       '</div>';
     list.appendChild(row);
@@ -270,7 +270,7 @@ async function submitForm() {
   if (!siteId) return showMsg('請選擇場域', false);
   if (items.some(it => !itemResults[it.id])) return showMsg('請完成所有檢查項目', false);
   const hasAbnormal = items.some(it => itemResults[it.id] === 'bad');
-  if (hasAbnormal && !abnormalMeasures) return showMsg('有檢查項目為「不良」，請填寫異常說明', false);
+  if (hasAbnormal && !abnormalMeasures) return showMsg('有檢查項目為「否」，請填寫異常說明', false);
   if (!inspectorId) return showMsg('請選擇檢點人員', false);
 
   const btn = document.getElementById('submitBtn');
