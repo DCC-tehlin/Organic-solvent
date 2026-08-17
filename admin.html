@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>後台管理｜有機溶劑作業檢點表</title>
+<title>後台管理｜德林線上檢點表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -116,8 +116,8 @@
 <!-- ================= 登入畫面 ================= -->
 <div id="loginScreen">
   <div class="login-box">
-    <h1>有機溶劑作業檢點表</h1>
-    <p>後台管理系統｜德林股份有限公司</p>
+    <h1>德林線上檢點表</h1>
+    <p>後台管理系統｜有機溶劑・粉塵作業</p>
     <div class="login-error" id="loginError"></div>
     <label>帳號</label>
     <input type="text" id="loginUser" placeholder="admin">
@@ -137,12 +137,21 @@
 <div id="appScreen">
 <div class="layout">
   <nav>
-    <h2>有機溶劑檢點表管理</h2>
+    <h2>德林線上檢點表</h2>
     <div class="navitem active" data-page="dashboard" onclick="gotoPage('dashboard')">儀表板</div>
+
+    <h2 style="margin-top:14px">有機溶劑作業</h2>
     <div class="navitem" data-page="records" onclick="gotoPage('records')">檢查記錄</div>
     <div class="navitem" data-page="units" onclick="gotoPage('units')">單位管理</div>
-    <div class="navitem" data-page="inspectors" onclick="gotoPage('inspectors')">檢點人員管理</div>
     <div class="navitem" data-page="items" onclick="gotoPage('items')">檢查項目管理</div>
+
+    <h2 style="margin-top:14px">粉塵作業</h2>
+    <div class="navitem" data-page="dustRecords" onclick="gotoPage('dustRecords')">檢查記錄</div>
+    <div class="navitem" data-page="sites" onclick="gotoPage('sites')">場域管理</div>
+    <div class="navitem" data-page="dustItems" onclick="gotoPage('dustItems')">檢查項目管理</div>
+
+    <h2 style="margin-top:14px">共用管理</h2>
+    <div class="navitem" data-page="inspectors" onclick="gotoPage('inspectors')">檢點人員管理</div>
     <div class="navitem" data-page="admins" onclick="gotoPage('admins')">管理員帳號</div>
     <div class="navitem" data-page="import" onclick="gotoPage('import')">批次匯入</div>
     <div class="navfoot">
@@ -155,6 +164,8 @@
     <!-- 儀表板 -->
     <div class="page active" id="page-dashboard">
       <h1>儀表板</h1>
+
+      <h3 style="margin-bottom:10px;color:#888;font-weight:500;font-size:.85rem">有機溶劑作業</h3>
       <div class="stats">
         <div class="stat-card"><div class="num" id="statMonth">-</div><div class="lbl">本月記錄數</div></div>
         <div class="stat-card"><div class="num red" id="statAbnormal">-</div><div class="lbl">本月異常次數</div></div>
@@ -164,6 +175,19 @@
         <h3>最近記錄</h3>
         <table id="recentTable"><thead><tr>
           <th>編號</th><th>單位</th><th>作業名稱</th><th>日期</th><th>員工代號</th><th>檢點人員</th><th>結果</th><th>送出時間</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+
+      <h3 style="margin-bottom:10px;color:#888;font-weight:500;font-size:.85rem">粉塵作業</h3>
+      <div class="stats">
+        <div class="stat-card"><div class="num" id="dustStatMonth">-</div><div class="lbl">本月記錄數</div></div>
+        <div class="stat-card"><div class="num red" id="dustStatAbnormal">-</div><div class="lbl">本月異常次數</div></div>
+        <div class="stat-card"><div class="num" id="dustStatSites">-</div><div class="lbl">啟用中場域數</div></div>
+      </div>
+      <div class="card">
+        <h3>最近記錄</h3>
+        <table id="dustRecentTable"><thead><tr>
+          <th>編號</th><th>場域</th><th>日期</th><th>員工代號</th><th>檢點人員</th><th>結果</th><th>送出時間</th>
         </tr></thead><tbody></tbody></table>
       </div>
     </div>
@@ -228,6 +252,53 @@
       </div>
     </div>
 
+    <!-- 粉塵-檢查記錄 -->
+    <div class="page" id="page-dustRecords">
+      <h1>粉塵作業｜檢查記錄</h1>
+      <div class="toolbar">
+        <div class="field"><label>場域</label>
+          <select id="dustFilterSite"><option value="">全部</option></select>
+        </div>
+        <div class="field"><label>檢點人員</label>
+          <select id="dustFilterInspector"><option value="">全部</option></select>
+        </div>
+        <div class="field"><label>月份</label><input type="month" id="dustFilterMonth"></div>
+        <div class="field"><label>&nbsp;</label><button class="btn primary" onclick="loadDustRecords()">套用篩選</button></div>
+        <div class="field"><label>&nbsp;</label><button class="btn" onclick="exportDustCSV()">匯出 CSV</button></div>
+      </div>
+      <div class="card">
+        <table id="dustRecordsTable"><thead><tr>
+          <th>編號</th><th>場域</th><th>日期</th><th>員工代號</th><th>檢點人員</th><th>結果</th><th>送出時間</th><th>操作</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- 粉塵-場域管理 -->
+    <div class="page" id="page-sites">
+      <h1>粉塵作業｜場域管理</h1>
+      <div class="card">
+        <button class="btn primary" onclick="openSiteModal()">+ 新增場域</button>
+      </div>
+      <div class="card">
+        <table id="sitesTable"><thead><tr>
+          <th>場域</th><th>狀態</th><th>操作</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- 粉塵-檢查項目管理 -->
+    <div class="page" id="page-dustItems">
+      <h1>粉塵作業｜檢查項目管理</h1>
+      <div class="card">
+        <button class="btn primary" onclick="openDustItemModal()">+ 新增項目</button>
+      </div>
+      <div class="card">
+        <table id="dustItemsTable"><thead><tr>
+          <th>分類</th><th>分類順序</th><th>項目順序</th><th>檢查項目內容</th><th>狀態</th><th>操作</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
     <!-- 管理員帳號 -->
     <div class="page" id="page-admins">
       <h1>管理員帳號</h1>
@@ -245,10 +316,23 @@
     <div class="page" id="page-import">
       <h1>批次匯入</h1>
       <div class="card">
-        <p style="font-size:.85rem; color:#666; line-height:1.7; margin-bottom:14px;">
+        <div class="toolbar" style="margin-bottom:6px">
+          <div class="field"><label>匯入類型</label>
+            <select id="importType" onchange="updateImportTypeUI()">
+              <option value="solvent">有機溶劑作業檢點表</option>
+              <option value="dust">粉塵作業檢點表</option>
+            </select>
+          </div>
+        </div>
+        <p id="importFormatHintSolvent" style="font-size:.85rem; color:#666; line-height:1.7; margin-bottom:14px;">
           CSV 欄位需依序為：<br>
           <code>單位,作業名稱,日期,員工代號,檢點人員,品項順序,品項內容,結果(是/否),異常時採取之措施,送出時間</code><br>
           每張檢點表對應多列（每個檢查項目一列），系統會依「單位+日期+員工代號」自動分組為一筆記錄。
+        </p>
+        <p id="importFormatHintDust" style="display:none; font-size:.85rem; color:#666; line-height:1.7; margin-bottom:14px;">
+          CSV 欄位需依序為：<br>
+          <code>場域,日期,員工代號,檢點人員,分類,品項順序,品項內容,結果(良好/不良/無此項目),異常說明,送出時間</code><br>
+          每張檢點表對應多列（每個檢查項目一列），系統會依「場域+日期+員工代號」自動分組為一筆記錄。
         </p>
         <div class="import-box">
           <input type="file" id="importFile" accept=".csv" onchange="handleImportFile(event)">
@@ -259,6 +343,37 @@
     </div>
   </main>
 </div>
+</div>
+
+<!-- ============ Modal：場域 ============ -->
+<div class="modal-overlay" id="modalSite">
+  <div class="modal">
+    <span class="close-x" onclick="closeModal('modalSite')">✕</span>
+    <h3 id="siteModalTitle">新增場域</h3>
+    <input type="hidden" id="siteId">
+    <div class="form-row"><label>場域名稱 *</label><input type="text" id="siteName"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalSite')">取消</button>
+      <button class="btn primary" onclick="saveSite()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal：粉塵檢查項目 ============ -->
+<div class="modal-overlay" id="modalDustItem">
+  <div class="modal">
+    <span class="close-x" onclick="closeModal('modalDustItem')">✕</span>
+    <h3 id="dustItemModalTitle">新增檢查項目</h3>
+    <input type="hidden" id="dustItemId">
+    <div class="form-row"><label>分類 *</label><input type="text" id="dustItemCategory" placeholder="例如：一、勞工作業情形及粉塵狀況"></div>
+    <div class="form-row"><label>分類順序 *</label><input type="text" id="dustItemCategorySeq" placeholder="例如：1"></div>
+    <div class="form-row"><label>項目順序 *</label><input type="text" id="dustItemSeq"></div>
+    <div class="form-row"><label>檢查項目內容 *</label><textarea id="dustItemContent" rows="3"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modalDustItem')">取消</button>
+      <button class="btn primary" onclick="saveDustItem()">儲存</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============ Modal：單位 ============ -->
@@ -335,6 +450,19 @@
   </div>
 </div>
 
+<!-- ============ Modal：粉塵記錄明細 ============ -->
+<div class="modal-overlay" id="modalDustDetail">
+  <div class="modal">
+    <span class="close-x" onclick="closeModal('modalDustDetail')">✕</span>
+    <h3>粉塵檢查記錄明細</h3>
+    <div id="dustDetailBody"></div>
+    <div class="modal-actions">
+      <button class="btn danger" onclick="deleteCurrentDustRecord()">刪除此記錄</button>
+      <button class="btn" onclick="closeModal('modalDustDetail')">關閉</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============== Supabase 設定（請於部署前填入你的專案資訊）==============
 const SUPABASE_URL = 'https://rdyveklftdnfcybqqxed.supabase.co';
@@ -370,9 +498,12 @@ async function hashPassword(password) {
 
 let currentAdmin = null;
 let currentDetailId = null;
+let currentDustDetailId = null;
 let allUnits = [];
 let allItems = [];
 let allInspectors = [];
+let allSites = [];
+let allDustItems = [];
 
 // ---------------- 登入 ----------------
 async function doLogin() {
@@ -423,6 +554,9 @@ function gotoPage(name) {
   if (name === 'inspectors') loadInspectorsTable();
   if (name === 'items') loadItemsTable();
   if (name === 'admins') loadAdminsTable();
+  if (name === 'dustRecords') loadDustRecords();
+  if (name === 'sites') loadSitesTable();
+  if (name === 'dustItems') loadDustItemsTable();
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -458,6 +592,27 @@ async function loadMasterData() {
     opt.textContent = p.employee_code + ' / ' + p.name;
     selI.appendChild(opt);
   });
+
+  allSites = await dbFetch('dust_sites?order=site_name.asc');
+  allDustItems = await dbFetch('dust_checklist_items?order=category_seq.asc,seq.asc');
+
+  const selSite = document.getElementById('dustFilterSite');
+  selSite.innerHTML = '<option value="">全部</option>';
+  allSites.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.site_name;
+    selSite.appendChild(opt);
+  });
+
+  const selDI = document.getElementById('dustFilterInspector');
+  selDI.innerHTML = '<option value="">全部</option>';
+  allInspectors.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.employee_code + ' / ' + p.name;
+    selDI.appendChild(opt);
+  });
 }
 
 // ---------------- 儀表板 ----------------
@@ -472,7 +627,7 @@ async function loadDashboard() {
   const recent = rows.slice(0, 10);
   const tbody = document.querySelector('#recentTable tbody');
   tbody.innerHTML = '';
-  if (recent.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="empty">尚無記錄</td></tr>'; return; }
+  if (recent.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="empty">尚無記錄</td></tr>'; }
   recent.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML =
@@ -480,6 +635,24 @@ async function loadDashboard() {
       '<td>' + r.inspection_date + '</td><td>' + r.inspector_employee_code + '</td><td>' + r.inspector_name + '</td>' +
       '<td>' + badgeHTML(r.has_abnormal) + '</td><td>' + fmtDT(r.submitted_at) + '</td>';
     tbody.appendChild(tr);
+  });
+
+  const dustRows = await dbFetch('dust_inspections?inspection_date=gte.' + monthStart + '&order=submitted_at.desc');
+  document.getElementById('dustStatMonth').textContent = dustRows.length;
+  document.getElementById('dustStatAbnormal').textContent = dustRows.filter(r => r.has_abnormal).length;
+  document.getElementById('dustStatSites').textContent = allSites.filter(s => s.is_active).length;
+
+  const dustRecent = dustRows.slice(0, 10);
+  const dustTbody = document.querySelector('#dustRecentTable tbody');
+  dustTbody.innerHTML = '';
+  if (dustRecent.length === 0) { dustTbody.innerHTML = '<tr><td colspan="7" class="empty">尚無記錄</td></tr>'; }
+  dustRecent.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + r.id + '</td><td>' + r.site_name + '</td>' +
+      '<td>' + r.inspection_date + '</td><td>' + r.inspector_employee_code + '</td><td>' + r.inspector_name + '</td>' +
+      '<td>' + badgeHTML(r.has_abnormal) + '</td><td>' + fmtDT(r.submitted_at) + '</td>';
+    dustTbody.appendChild(tr);
   });
 }
 
@@ -566,6 +739,194 @@ async function exportCSV() {
 function todayStr() {
   const d = new Date();
   return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+
+// ---------------- 粉塵-檢查記錄 ----------------
+let lastDustRecordsResult = [];
+function dustResultBadge(result) {
+  if (result === 'good') return '<span class="badge ok">良好</span>';
+  if (result === 'bad') return '<span class="badge bad">不良</span>';
+  return '<span class="badge off">無此項目</span>';
+}
+async function loadDustRecords() {
+  const siteId = document.getElementById('dustFilterSite').value;
+  const inspectorId = document.getElementById('dustFilterInspector').value;
+  const month = document.getElementById('dustFilterMonth').value;
+  let query = 'dust_inspections?order=submitted_at.desc';
+  if (siteId) query += '&site_id=eq.' + siteId;
+  if (inspectorId) query += '&inspector_id=eq.' + inspectorId;
+  if (month) {
+    const [y, m] = month.split('-');
+    const start = y + '-' + m + '-01';
+    const nextM = m === '12' ? '01' : String(Number(m) + 1).padStart(2, '0');
+    const nextY = m === '12' ? String(Number(y) + 1) : y;
+    const end = nextY + '-' + nextM + '-01';
+    query += '&inspection_date=gte.' + start + '&inspection_date=lt.' + end;
+  }
+  const rows = await dbFetch(query);
+  lastDustRecordsResult = rows;
+  const tbody = document.querySelector('#dustRecordsTable tbody');
+  tbody.innerHTML = '';
+  if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="empty">查無記錄</td></tr>'; return; }
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + r.id + '</td><td>' + r.site_name + '</td>' +
+      '<td>' + r.inspection_date + '</td><td>' + r.inspector_employee_code + '</td><td>' + r.inspector_name + '</td>' +
+      '<td>' + badgeHTML(r.has_abnormal) + '</td><td>' + fmtDT(r.submitted_at) + '</td>' +
+      '<td><button class="btn small" onclick="viewDustDetail(' + r.id + ')">查看</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+async function viewDustDetail(id) {
+  currentDustDetailId = id;
+  const insp = (await dbFetch('dust_inspections?id=eq.' + id))[0];
+  const details = await dbFetch('dust_inspection_items?inspection_id=eq.' + id + '&order=seq.asc');
+  let html = '';
+  html += '<div class="detail-item"><span>場域</span><b>' + insp.site_name + '</b></div>';
+  html += '<div class="detail-item"><span>檢查日期</span><b>' + insp.inspection_date + '</b></div>';
+  html += '<div class="detail-item"><span>檢點人員員工代號</span><b>' + insp.inspector_employee_code + '</b></div>';
+  let lastCategory = null;
+  details.forEach(d => {
+    if (d.category !== lastCategory) {
+      html += '<div class="detail-item" style="border-bottom:none;padding-bottom:2px;padding-top:14px"><b style="color:var(--dark)">' + d.category + '</b></div>';
+      lastCategory = d.category;
+    }
+    html += '<div class="detail-item"><span>' + d.seq + '. ' + d.item_content + '</span>' + dustResultBadge(d.result) + '</div>';
+  });
+  html += '<div class="detail-item" style="margin-top:10px"><span>異常說明</span><span>' + (insp.abnormal_measures || '（無）') + '</span></div>';
+  html += '<div class="detail-item"><span>檢點人員</span><span>' + insp.inspector_name + '（' + insp.inspector_employee_code + '）</span></div>';
+  html += '<div class="detail-item"><span>送出時間</span><span>' + fmtDT(insp.submitted_at) + '</span></div>';
+  document.getElementById('dustDetailBody').innerHTML = html;
+  document.getElementById('modalDustDetail').classList.add('open');
+}
+
+async function deleteCurrentDustRecord() {
+  if (!confirm('確定要刪除這筆檢查記錄嗎？此動作無法復原。')) return;
+  await dbFetch('dust_inspection_items?inspection_id=eq.' + currentDustDetailId, { method: 'DELETE', prefer: 'return=minimal' });
+  await dbFetch('dust_inspections?id=eq.' + currentDustDetailId, { method: 'DELETE', prefer: 'return=minimal' });
+  closeModal('modalDustDetail');
+  loadDustRecords();
+}
+
+async function exportDustCSV() {
+  if (lastDustRecordsResult.length === 0) { alert('目前無資料可匯出'); return; }
+  const rows = [['場域', '日期', '員工代號', '檢點人員', '分類', '品項順序', '品項內容', '結果', '異常說明', '送出時間']];
+  for (const insp of lastDustRecordsResult) {
+    const details = await dbFetch('dust_inspection_items?inspection_id=eq.' + insp.id + '&order=seq.asc');
+    details.forEach(d => {
+      const resultText = d.result === 'good' ? '良好' : (d.result === 'bad' ? '不良' : '無此項目');
+      rows.push([
+        insp.site_name, insp.inspection_date, insp.inspector_employee_code, insp.inspector_name,
+        d.category, d.seq, d.item_content, resultText, insp.abnormal_measures || '', insp.submitted_at
+      ]);
+    });
+  }
+  const csv = '﻿' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = '粉塵作業檢點記錄_' + todayStr() + '.csv';
+  a.click();
+}
+
+// ---------------- 粉塵-場域管理 ----------------
+async function loadSitesTable() {
+  const rows = await dbFetch('dust_sites?order=site_name.asc');
+  allSites = rows;
+  const tbody = document.querySelector('#sitesTable tbody');
+  tbody.innerHTML = '';
+  rows.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + s.site_name + '</td>' +
+      '<td>' + (s.is_active ? '<span class="badge ok">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
+      '<td><button class="btn small" onclick=\'editSite(' + JSON.stringify(s).replace(/'/g, "&#39;") + ')\'>編輯</button> ' +
+      '<button class="btn small" onclick="toggleSite(' + s.id + ',' + !s.is_active + ')">' + (s.is_active ? '停用' : '啟用') + '</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+function openSiteModal() {
+  document.getElementById('siteModalTitle').textContent = '新增場域';
+  document.getElementById('siteId').value = '';
+  document.getElementById('siteName').value = '';
+  document.getElementById('modalSite').classList.add('open');
+}
+function editSite(s) {
+  document.getElementById('siteModalTitle').textContent = '編輯場域';
+  document.getElementById('siteId').value = s.id;
+  document.getElementById('siteName').value = s.site_name;
+  document.getElementById('modalSite').classList.add('open');
+}
+async function saveSite() {
+  const id = document.getElementById('siteId').value;
+  const site_name = document.getElementById('siteName').value.trim();
+  if (!site_name) { alert('請填寫場域名稱'); return; }
+  if (id) {
+    await dbFetch('dust_sites?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ site_name }) });
+  } else {
+    await dbFetch('dust_sites', { method: 'POST', body: JSON.stringify({ site_name }) });
+  }
+  closeModal('modalSite');
+  loadSitesTable();
+}
+async function toggleSite(id, newVal) {
+  await dbFetch('dust_sites?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ is_active: newVal }) });
+  loadSitesTable();
+}
+
+// ---------------- 粉塵-檢查項目管理 ----------------
+async function loadDustItemsTable() {
+  const rows = await dbFetch('dust_checklist_items?order=category_seq.asc,seq.asc');
+  allDustItems = rows;
+  const tbody = document.querySelector('#dustItemsTable tbody');
+  tbody.innerHTML = '';
+  rows.forEach(it => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + it.category + '</td><td>' + it.category_seq + '</td><td>' + it.seq + '</td><td>' + it.content + '</td>' +
+      '<td>' + (it.is_active ? '<span class="badge ok">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
+      '<td><button class="btn small" onclick=\'editDustItem(' + JSON.stringify(it).replace(/'/g, "&#39;") + ')\'>編輯</button> ' +
+      '<button class="btn small" onclick="toggleDustItem(' + it.id + ',' + !it.is_active + ')">' + (it.is_active ? '停用' : '啟用') + '</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+function openDustItemModal() {
+  document.getElementById('dustItemModalTitle').textContent = '新增檢查項目';
+  document.getElementById('dustItemId').value = '';
+  document.getElementById('dustItemCategory').value = '';
+  document.getElementById('dustItemCategorySeq').value = (allDustItems.length ? Math.max(...allDustItems.map(i => i.category_seq)) : 1);
+  document.getElementById('dustItemSeq').value = 1;
+  document.getElementById('dustItemContent').value = '';
+  document.getElementById('modalDustItem').classList.add('open');
+}
+function editDustItem(it) {
+  document.getElementById('dustItemModalTitle').textContent = '編輯檢查項目';
+  document.getElementById('dustItemId').value = it.id;
+  document.getElementById('dustItemCategory').value = it.category;
+  document.getElementById('dustItemCategorySeq').value = it.category_seq;
+  document.getElementById('dustItemSeq').value = it.seq;
+  document.getElementById('dustItemContent').value = it.content;
+  document.getElementById('modalDustItem').classList.add('open');
+}
+async function saveDustItem() {
+  const id = document.getElementById('dustItemId').value;
+  const category = document.getElementById('dustItemCategory').value.trim();
+  const category_seq = Number(document.getElementById('dustItemCategorySeq').value);
+  const seq = Number(document.getElementById('dustItemSeq').value);
+  const content = document.getElementById('dustItemContent').value.trim();
+  if (!category || !category_seq || !seq || !content) { alert('請填寫完整資訊'); return; }
+  if (id) {
+    await dbFetch('dust_checklist_items?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ category, category_seq, seq, content }) });
+  } else {
+    await dbFetch('dust_checklist_items', { method: 'POST', body: JSON.stringify({ category, category_seq, seq, content }) });
+  }
+  closeModal('modalDustItem');
+  loadDustItemsTable();
+}
+async function toggleDustItem(id, newVal) {
+  await dbFetch('dust_checklist_items?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ is_active: newVal }) });
+  loadDustItemsTable();
 }
 
 // ---------------- 單位管理 ----------------
@@ -801,23 +1162,49 @@ function parseCSV(text) {
 }
 
 let importGroups = [];
+
+function updateImportTypeUI() {
+  const type = document.getElementById('importType').value;
+  document.getElementById('importFormatHintSolvent').style.display = type === 'solvent' ? '' : 'none';
+  document.getElementById('importFormatHintDust').style.display = type === 'dust' ? '' : 'none';
+  document.getElementById('importPreview').innerHTML = '';
+  document.getElementById('importMsg').className = 'msg';
+  document.getElementById('importFile').value = '';
+  importGroups = [];
+}
+
 function handleImportFile(e) {
   const file = e.target.files[0];
   if (!file) return;
+  const type = document.getElementById('importType').value;
   const reader = new FileReader();
   reader.onload = function (evt) {
     try {
       const rows = parseCSV(evt.target.result);
-      const dataRows = rows[0][0] === '單位' ? rows.slice(1) : rows;
-      const groups = {};
-      dataRows.forEach(r => {
-        const [unit, operation, date, employeeCode, inspector, seq, content, result, measures, submitted] = r;
-        const key = unit + '|' + date + '|' + employeeCode;
-        if (!groups[key]) groups[key] = { unit, operation, date, employeeCode, inspector, measures, submitted, items: [] };
-        groups[key].items.push({ seq: Number(seq), content, result: (result === '是' ? 'yes' : 'no') });
-      });
-      importGroups = Object.values(groups);
-      renderImportPreview();
+      if (type === 'dust') {
+        const dataRows = (rows[0][0] === '場域') ? rows.slice(1) : rows;
+        const groups = {};
+        dataRows.forEach(r => {
+          const [site, date, employeeCode, inspector, category, seq, content, result, measures, submitted] = r;
+          const key = site + '|' + date + '|' + employeeCode;
+          if (!groups[key]) groups[key] = { site, date, employeeCode, inspector, measures, submitted, items: [] };
+          const resultVal = result === '良好' ? 'good' : (result === '不良' ? 'bad' : 'na');
+          groups[key].items.push({ category, seq: Number(seq), content, result: resultVal });
+        });
+        importGroups = Object.values(groups);
+        renderDustImportPreview();
+      } else {
+        const dataRows = (rows[0][0] === '單位') ? rows.slice(1) : rows;
+        const groups = {};
+        dataRows.forEach(r => {
+          const [unit, operation, date, employeeCode, inspector, seq, content, result, measures, submitted] = r;
+          const key = unit + '|' + date + '|' + employeeCode;
+          if (!groups[key]) groups[key] = { unit, operation, date, employeeCode, inspector, measures, submitted, items: [] };
+          groups[key].items.push({ seq: Number(seq), content, result: (result === '是' ? 'yes' : 'no') });
+        });
+        importGroups = Object.values(groups);
+        renderImportPreview();
+      }
     } catch (err) {
       document.getElementById('importMsg').className = 'msg error';
       document.getElementById('importMsg').textContent = 'CSV 解析失敗：' + err.message;
@@ -859,6 +1246,49 @@ async function confirmImport() {
       const insp = inspRows[0];
       const details = g.items.map(it => ({ inspection_id: insp.id, item_content: it.content, seq: it.seq, result: it.result }));
       await dbFetch('inspection_items', { method: 'POST', body: JSON.stringify(details) });
+      ok++;
+    } catch (e) { fail++; }
+  }
+  msgBox.className = 'msg ' + (fail ? 'error' : 'ok');
+  msgBox.textContent = '匯入完成：成功 ' + ok + ' 筆，失敗 ' + fail + ' 筆';
+  document.getElementById('importPreview').innerHTML = '';
+  importGroups = [];
+}
+
+function renderDustImportPreview() {
+  let html = '<table><thead><tr><th>場域</th><th>日期</th><th>員工代號</th><th>檢點人員</th><th>項目數</th></tr></thead><tbody>';
+  importGroups.forEach(g => {
+    const foundSite = allSites.find(s => s.site_name === g.site);
+    const foundInspector = allInspectors.find(p => p.employee_code === g.employeeCode);
+    const ok = foundSite && foundInspector;
+    html += '<tr' + (ok ? '' : ' style="color:#C0392B"') + '>' +
+      '<td>' + g.site + (foundSite ? '' : '（找不到對應場域）') + '</td><td>' + g.date + '</td>' +
+      '<td>' + g.employeeCode + (foundInspector ? '' : '（找不到對應員工代號）') + '</td><td>' + g.inspector + '</td><td>' + g.items.length + '</td></tr>';
+  });
+  html += '</tbody></table><button class="btn primary" style="margin-top:14px" onclick="confirmDustImport()">確認匯入 ' + importGroups.length + ' 筆記錄</button>';
+  document.getElementById('importPreview').innerHTML = html;
+}
+async function confirmDustImport() {
+  const msgBox = document.getElementById('importMsg');
+  let ok = 0, fail = 0;
+  for (const g of importGroups) {
+    const site = allSites.find(s => s.site_name === g.site);
+    const inspector = allInspectors.find(p => p.employee_code === g.employeeCode);
+    if (!site || !inspector) { fail++; continue; }
+    try {
+      const hasAbnormal = g.items.some(it => it.result === 'bad');
+      const inspRows = await dbFetch('dust_inspections', {
+        method: 'POST',
+        body: JSON.stringify({
+          site_id: site.id, site_name: site.site_name,
+          inspection_date: g.date, has_abnormal: hasAbnormal, abnormal_measures: g.measures || null,
+          inspector_id: inspector.id, inspector_employee_code: inspector.employee_code, inspector_name: g.inspector || inspector.name,
+          submitted_at: g.submitted || new Date().toISOString()
+        })
+      });
+      const insp = inspRows[0];
+      const details = g.items.map(it => ({ inspection_id: insp.id, category: it.category, item_content: it.content, seq: it.seq, result: it.result }));
+      await dbFetch('dust_inspection_items', { method: 'POST', body: JSON.stringify(details) });
       ok++;
     } catch (e) { fail++; }
   }

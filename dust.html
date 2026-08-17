@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>粉塵作業檢點表｜德林股份有限公司</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#C0392B; --red-dark:#a32f22;
+    --dark:#1a2332; --dark2:#232f45;
+    --green:#1E8449; --gray:#6b7280; --bg:#f4f5f7;
+    --border:#e2e4e9;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Noto Sans TC', sans-serif; background:var(--bg); color:#1a1a1a;
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--dark); color:#fff; padding:22px 16px; text-align:center;
+  }
+  header h1{ font-size:1.3rem; font-weight:900; letter-spacing:1px; }
+  header p{ font-size:.8rem; color:#9aa4b8; margin-top:4px; }
+
+  .wrap{ max-width:720px; margin:0 auto; padding:16px; }
+  .card{
+    background:#fff; border-radius:8px; padding:20px; margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.08); border:1px solid var(--border);
+  }
+  .card h2{
+    font-size:1rem; color:var(--dark); margin-bottom:14px; padding-bottom:8px;
+    border-bottom:2px solid var(--red); display:inline-block;
+  }
+  label{ display:block; font-size:.85rem; font-weight:500; color:#444; margin-bottom:6px; }
+  select, input[type=text], textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:6px;
+    font-size:.95rem; font-family:inherit; background:#fff;
+  }
+  .fixed-date{
+    padding:10px 12px; border:1px solid var(--border); border-radius:6px;
+    font-size:.95rem; background:#f3f4f6; color:#444; font-family:'DM Mono',monospace;
+  }
+  textarea{ resize:vertical; min-height:70px; }
+  .field{ margin-bottom:16px; }
+
+  .category-title{
+    font-size:.85rem; font-weight:700; color:#fff; background:var(--dark2);
+    padding:7px 12px; border-radius:6px; margin:16px 0 4px;
+  }
+  .category-title:first-child{ margin-top:0; }
+
+  .item-row{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .item-row:last-child{ border-bottom:none; }
+  .item-num{ color:var(--red); font-family:'DM Mono',monospace; font-weight:500; margin-right:6px; }
+  .item-text{ font-size:.9rem; flex:1; line-height:1.4; }
+  .toggle{ display:flex; gap:6px; flex-shrink:0; }
+  .toggle button{
+    padding:8px 12px; border-radius:6px; border:1.5px solid var(--border); background:#fff;
+    font-size:.8rem; font-weight:700; cursor:pointer; font-family:inherit; color:#888;
+    transition:.15s;
+  }
+  .toggle button.good.active{ background:var(--green); border-color:var(--green); color:#fff; }
+  .toggle button.bad.active{ background:var(--red); border-color:var(--red); color:#fff; }
+  .toggle button.na.active{ background:#888; border-color:#888; color:#fff; }
+
+  .submit-btn{
+    width:100%; padding:15px; background:var(--red); color:#fff; border:none; border-radius:8px;
+    font-size:1.05rem; font-weight:700; cursor:pointer; font-family:inherit; margin-top:8px;
+  }
+  .submit-btn:active{ background:var(--red-dark); }
+  .submit-btn:disabled{ background:#ccc; cursor:not-allowed; }
+
+  .notice{ font-size:.78rem; color:#666; line-height:1.7; }
+  .notice b{ color:var(--red); }
+
+  .msg{ font-size:.85rem; margin-top:10px; padding:10px 12px; border-radius:6px; display:none; }
+  .msg.error{ background:#fdecea; color:var(--red-dark); display:block; }
+  .msg.ok{ background:#eafaf1; color:var(--green); display:block; }
+
+  .success-screen{ display:none; text-align:center; padding:40px 20px; }
+  .success-screen .check{ font-size:3rem; color:var(--green); }
+  .success-screen h2{ margin:14px 0 6px; color:var(--dark); border:none; display:block; }
+  .success-screen p{ color:#666; font-size:.9rem; margin-bottom:4px; }
+  .success-screen .id{ font-family:'DM Mono',monospace; font-weight:700; color:var(--red); }
+  .success-screen button{
+    margin-top:20px; padding:12px 28px; background:var(--dark); color:#fff; border:none;
+    border-radius:6px; font-size:.9rem; cursor:pointer; font-family:inherit;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>粉塵作業檢點表</h1>
+  <p>德林股份有限公司｜線上填寫系統</p>
+</header>
+
+<div class="wrap">
+
+  <div id="formScreen">
+    <div class="card">
+      <h2>基本資料</h2>
+      <div class="field">
+        <label>場域 *</label>
+        <select id="siteSelect"><option value="">請選擇...</option></select>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>檢查日期</label>
+        <div id="inspDateDisplay" class="fixed-date"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>檢查項目</h2>
+      <p style="font-size:.78rem; color:#888; margin-bottom:4px;">良好請點「良好」，異常請點「不良」，該場域無此項目請點「無此項目」</p>
+      <div id="itemsList"></div>
+    </div>
+
+    <div class="card">
+      <h2>異常說明</h2>
+      <div class="field" style="margin-bottom:0">
+        <textarea id="abnormalMeasures" placeholder="若上列檢查項目有勾選「不良」，請說明發現之異常狀況及已採取之改善措施"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>檢點人員</h2>
+      <div class="field" style="margin-bottom:0">
+        <label>檢點人員（員工代號 / 姓名） *</label>
+        <select id="inspectorSelect"><option value="">請選擇...</option></select>
+      </div>
+    </div>
+
+    <div class="card notice">
+      <p><b>備註：</b></p>
+      <p>1. 檢查結果：良好者請點選「良好」，不良請點選「不良」，該場域無此項目請點選「無此項目」。</p>
+      <p>2. 本表確實填報及保存，如影響作業安全、生產效率、品質請主動呈報主管以維持人員安全。</p>
+    </div>
+
+    <div id="msgBox" class="msg"></div>
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">送出檢點表</button>
+  </div>
+
+  <div id="successScreen" class="success-screen">
+    <div class="check">✓</div>
+    <h2>已成功送出</h2>
+    <p>檢查編號：<span class="id" id="doneId"></span></p>
+    <p id="doneTime"></p>
+    <button onclick="location.reload()">再填一份</button>
+  </div>
+
+</div>
+
+<script>
+// ============== Supabase 設定（與有機溶劑作業檢點表共用同一個專案）==============
+const SUPABASE_URL = 'https://rdyveklftdnfcybqqxed.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_GpTTXK7u53V5b6i10-5Y5w_ILlEgPKy';
+// =========================================================================
+
+async function supaFetch(path, opts = {}) {
+  const url = SUPABASE_URL + '/rest/v1/' + path;
+  const res = await fetch(url, {
+    ...opts,
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...(opts.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || ('伺服器錯誤 ' + res.status));
+  }
+  return res.json().catch(() => null);
+}
+
+let sites = [];
+let items = [];
+let inspectors = [];
+const itemResults = {}; // item.id -> 'good' | 'bad' | 'na'
+
+function todayStr() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
+async function loadSites() {
+  sites = await supaFetch('dust_sites?is_active=eq.true&order=site_name.asc');
+  const sel = document.getElementById('siteSelect');
+  sites.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.site_name;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadInspectors() {
+  inspectors = await supaFetch('inspectors?is_active=eq.true&order=employee_code.asc');
+  const sel = document.getElementById('inspectorSelect');
+  inspectors.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.employee_code + '　/　' + p.name;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadItems() {
+  items = await supaFetch('dust_checklist_items?is_active=eq.true&order=category_seq.asc,seq.asc');
+  const list = document.getElementById('itemsList');
+  let lastCategory = null;
+  items.forEach(it => {
+    if (it.category !== lastCategory) {
+      const title = document.createElement('div');
+      title.className = 'category-title';
+      title.textContent = it.category;
+      list.appendChild(title);
+      lastCategory = it.category;
+    }
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML =
+      '<div class="item-text"><span class="item-num">' + it.seq + '.</span>' + it.content + '</div>' +
+      '<div class="toggle">' +
+        '<button type="button" class="good" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'good')\">良好</button>" +
+        '<button type="button" class="bad" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'bad')\">不良</button>" +
+        '<button type="button" class="na" data-id="' + it.id + '" onclick="setResult(' + it.id + ",'na')\">無此項目</button>" +
+      '</div>';
+    list.appendChild(row);
+  });
+}
+
+function setResult(id, val) {
+  itemResults[id] = val;
+  document.querySelectorAll('.toggle button[data-id="' + id + '"]').forEach(btn => {
+    const isThis = btn.classList.contains(val);
+    btn.classList.toggle('active', isThis);
+  });
+}
+
+function showMsg(text, ok) {
+  const box = document.getElementById('msgBox');
+  box.textContent = text;
+  box.className = 'msg ' + (ok ? 'ok' : 'error');
+}
+
+async function submitForm() {
+  const siteId = document.getElementById('siteSelect').value;
+  const date = todayStr();
+  const abnormalMeasures = document.getElementById('abnormalMeasures').value.trim();
+  const inspectorId = document.getElementById('inspectorSelect').value;
+
+  if (!siteId) return showMsg('請選擇場域', false);
+  if (items.some(it => !itemResults[it.id])) return showMsg('請完成所有檢查項目', false);
+  const hasAbnormal = items.some(it => itemResults[it.id] === 'bad');
+  if (hasAbnormal && !abnormalMeasures) return showMsg('有檢查項目為「不良」，請填寫異常說明', false);
+  if (!inspectorId) return showMsg('請選擇檢點人員', false);
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '送出中...';
+
+  try {
+    const site = sites.find(s => String(s.id) === String(siteId));
+    const inspector = inspectors.find(p => String(p.id) === String(inspectorId));
+    const inspRows = await supaFetch('dust_inspections', {
+      method: 'POST',
+      body: JSON.stringify({
+        site_id: site.id,
+        site_name: site.site_name,
+        inspection_date: date,
+        has_abnormal: hasAbnormal,
+        abnormal_measures: abnormalMeasures || null,
+        inspector_id: inspector.id,
+        inspector_employee_code: inspector.employee_code,
+        inspector_name: inspector.name,
+        submitted_at: new Date().toISOString()
+      })
+    });
+    const inspection = inspRows[0];
+
+    const detailRows = items.map(it => ({
+      inspection_id: inspection.id,
+      item_id: it.id,
+      category: it.category,
+      item_content: it.content,
+      seq: it.seq,
+      result: itemResults[it.id]
+    }));
+    await supaFetch('dust_inspection_items', { method: 'POST', body: JSON.stringify(detailRows) });
+
+    document.getElementById('formScreen').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+    document.getElementById('doneId').textContent = inspection.id;
+    document.getElementById('doneTime').textContent =
+      '送出時間：' + new Date(inspection.submitted_at).toLocaleString('zh-TW');
+  } catch (e) {
+    showMsg('送出失敗：' + e.message, false);
+    btn.disabled = false; btn.textContent = '送出檢點表';
+  }
+}
+
+(async function init() {
+  document.getElementById('inspDateDisplay').textContent = todayStr();
+  try {
+    await Promise.all([loadSites(), loadItems(), loadInspectors()]);
+  } catch (e) {
+    showMsg('資料載入失敗，請確認 Supabase 設定是否正確：' + e.message, false);
+  }
+})();
+</script>
+</body>
+</html>
