@@ -1,0 +1,27 @@
+name: 自動匯出並清除舊資料
+
+on:
+  schedule:
+    - cron: '0 17 * * *'   # 每天 UTC 17:00（台灣時間隔日凌晨 01:00）檢查一次
+  workflow_dispatch: {}     # 可於 GitHub Actions 頁面手動觸發，方便測試
+
+jobs:
+  export-and-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 檢查筆數，超過門檻則匯出並清除
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPO: ${{ vars.BACKUP_REPO }}
+          EXPORT_THRESHOLD: 100
+        run: node scripts/auto-export-cleanup.mjs
